@@ -4,14 +4,16 @@ import os
 
 app = Flask(__name__)
 
+# 📁 Upload folder setup
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+# Ensure uploads folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# simple label extraction function
+
+# 🧠 Label Extraction Function
 def extract_labels(text):
-
-    labels = []
 
     keywords = [
         "fracture",
@@ -19,8 +21,13 @@ def extract_labels(text):
         "infection",
         "lesion",
         "opacity",
-        "nodule"
+        "nodule",
+        "pneumonia",
+        "effusion",
+        "consolidation"
     ]
+
+    labels = []
 
     for word in keywords:
         if word in text.lower():
@@ -29,14 +36,14 @@ def extract_labels(text):
     return labels
 
 
-# Home Page
+# 🏠 HOME PAGE
 @app.route("/")
 def home():
     return render_template("index.html")
 
 
-# Upload Page
-@app.route("/upload", methods=["GET","POST"])
+# 📤 UPLOAD PAGE
+@app.route("/upload", methods=["GET", "POST"])
 def upload():
 
     extracted = []
@@ -44,23 +51,29 @@ def upload():
 
     if request.method == "POST":
 
-        file = request.files["report"]
+        file = request.files.get("report")
 
-        if file:
+        if file and file.filename != "":
 
+            # Save file
             path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
             file.save(path)
 
-            with open(path,"r") as f:
+            # Read file
+            with open(path, "r") as f:
                 report_text = f.read()
 
+            # Extract labels
             extracted = extract_labels(report_text)
 
+            # 💾 Save to database
             conn = sqlite3.connect("database.db")
             c = conn.cursor()
 
-            c.execute("INSERT INTO results VALUES (?,?)",
-                      (report_text,", ".join(extracted)))
+            c.execute("CREATE TABLE IF NOT EXISTS results (report TEXT, labels TEXT)")
+
+            c.execute("INSERT INTO results VALUES (?, ?)",
+                      (report_text, ", ".join(extracted)))
 
             conn.commit()
             conn.close()
@@ -70,26 +83,40 @@ def upload():
                            labels=extracted)
 
 
-# Admin Dashboard
+# 📊 ADMIN DASHBOARD
 @app.route("/admin")
 def admin():
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("SELECT * FROM results")
-    records = c.fetchall()
+    c.execute("CREATE TABLE IF NOT EXISTS results (report TEXT, labels TEXT)")
+
+    c.execute("SELECT labels FROM results")
+    data = c.fetchall()
 
     conn.close()
 
-    return render_template("admin.html", records=records)
+    # Count labels for chart
+    label_count = {}
+
+    for row in data:
+        labels = row[0].split(", ")
+        for label in labels:
+            if label:
+                label_count[label] = label_count.get(label, 0) + 1
+
+    return render_template("admin.html",
+                           chart_data=label_count,
+                           records=data)
 
 
-# About Page
+# ℹ️ ABOUT PAGE
 @app.route("/about")
 def about():
     return render_template("about.html")
 
 
+# 🚀 RUN APP (for Render hosting)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
