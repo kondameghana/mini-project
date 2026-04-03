@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# 📁 Upload folder setup
+# 📁 Upload folder
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -36,13 +36,13 @@ def extract_labels(text):
     return labels
 
 
-# 🏠 HOME PAGE
+# 🏠 HOME
 @app.route("/")
 def home():
     return render_template("index.html")
 
 
-# 📤 UPLOAD PAGE
+# 📤 UPLOAD
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
 
@@ -53,20 +53,21 @@ def upload():
 
         file = request.files.get("report")
 
-        if file and file.filename != "":
+        # ✅ Only allow txt files
+        if file and file.filename.endswith(".txt"):
 
-            # Save file
             path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
             file.save(path)
 
-            # Read file
-            with open(path, "r") as f:
-                report_text = f.read()
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    report_text = f.read()
+            except:
+                report_text = "Error reading file"
 
-            # Extract labels
             extracted = extract_labels(report_text)
 
-            # 💾 Save to database
+            # 💾 Database
             conn = sqlite3.connect("database.db")
             c = conn.cursor()
 
@@ -78,12 +79,15 @@ def upload():
             conn.commit()
             conn.close()
 
+        else:
+            report_text = "Please upload a valid .txt file"
+
     return render_template("upload.html",
                            report=report_text,
                            labels=extracted)
 
 
-# 📊 ADMIN DASHBOARD
+# 📊 ADMIN
 @app.route("/admin")
 def admin():
 
@@ -91,13 +95,12 @@ def admin():
     c = conn.cursor()
 
     c.execute("CREATE TABLE IF NOT EXISTS results (report TEXT, labels TEXT)")
-
     c.execute("SELECT labels FROM results")
-    data = c.fetchall()
 
+    data = c.fetchall()
     conn.close()
 
-    # Count labels for chart
+    # Count labels
     label_count = {}
 
     for row in data:
@@ -111,12 +114,12 @@ def admin():
                            records=data)
 
 
-# ℹ️ ABOUT PAGE
+# ℹ️ ABOUT
 @app.route("/about")
 def about():
     return render_template("about.html")
 
 
-# 🚀 RUN APP (for Render hosting)
+# 🚀 RUN
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
