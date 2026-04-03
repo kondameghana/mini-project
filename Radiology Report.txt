@@ -1,0 +1,19 @@
+Radiology Report
+
+Patient Name: Ramesh Kumar
+Age/Sex: 45 / Male
+Date: 18-03-2026
+
+Examination:
+Chest X-Ray (PA View)
+
+Findings:
+The lungs are clear with no evidence of focal consolidation.
+No pleural effusion or pneumothorax is seen.
+Cardiac silhouette appears normal in size and shape.
+The bony thoracic cage is unremarkable.
+
+Impression:
+Normal chest radiograph. No active cardiopulmonary disease.
+
+Doctor Signature: Dr. Suresh Reddy

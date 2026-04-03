@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Report</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>Upload Radiology Report</h1>
+
+<form method="POST" action="/upload" enctype="multipart/form-data">
+<input type="file" name="report" required>
+<button>Upload</button>
+</form>
+
+<!-- RESULT SECTION -->
+
+{% if report %}
+
+<h3>Report Text</h3>
+<p>{{ report }}</p>
+
+<h3>Extracted Labels</h3>
+
+{% if labels %}
+<ul>
+{% for label in labels %}
+<li>{{ label }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p style="color:green;">No abnormalities detected (Normal Report)</p>
+{% endif %}
+
+{% endif %}
+
+</body>
+</html>
